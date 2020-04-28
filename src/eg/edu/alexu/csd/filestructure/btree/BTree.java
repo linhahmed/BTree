@@ -55,7 +55,6 @@ public class BTree<K extends Comparable<K>, V> implements IBTree<K, V> {
 		if (key == null || value == null) {
 			throw new RuntimeErrorException(null);
 		}
-
 		// first node
 		if (root == null) {
 			root = new BTreeNode<K, V>();
@@ -97,11 +96,13 @@ public class BTree<K extends Comparable<K>, V> implements IBTree<K, V> {
 			// if reached max num of keys then split
 			if (node.getChildren().get(i).getNumOfKeys() == 2 * t - 1) {
 				split(node, node.getChildren().get(i));
-				if (key.compareTo(node.getKeys().get(i)) > 0) {
-					i++;
-				}
+				/*
+				 * if (key.compareTo(node.getKeys().get(i)) > 0) { i++; }
+				 */
+				InsertNonFull(node, key, value);
+			} else {
+				InsertNonFull(node.getChildren().get(i), key, value);
 			}
-			InsertNonFull(node.getChildren().get(i), key, value);
 		}
 
 	}
@@ -116,14 +117,12 @@ public class BTree<K extends Comparable<K>, V> implements IBTree<K, V> {
 			node.getKeys().add(splittedNode.getKeys().get(i));
 			node.getValues().add(splittedNode.getValues().get(i));
 		}
-
 		if (!splittedNode.isLeaf()) {
 			for (int i = t; i <= splittedNode.getNumOfKeys(); i++) {
 				// Copy right half of the child pointers from splittedNode to the new node
 				node.getChildren().add(splittedNode.getChildren().get(i));
 			}
 		}
-
 		// remove the right half of the the keys from splittedNode
 		while (splittedNode.getKeys().size() > t - 1) {
 			splittedNode.getKeys().remove(splittedNode.getKeys().size() - 1);
@@ -141,6 +140,7 @@ public class BTree<K extends Comparable<K>, V> implements IBTree<K, V> {
 		while (i < parent.getNumOfKeys() && parent.getKeys().get(i).compareTo(key) < 0) {
 			i++;
 		}
+
 		parent.getKeys().add(i, key);
 		parent.getValues().add(i, value);
 		parent.setNumOfKeys(parent.getNumOfKeys() + 1);
@@ -207,8 +207,6 @@ public class BTree<K extends Comparable<K>, V> implements IBTree<K, V> {
 	}
 
 	private void deleteFromNonLeaf(IBTreeNode<K, V> x, int i) {
-
-		// TODO Auto-generated method stub
 
 		K k = x.getKeys().get(i);
 		V v = x.getValues().get(i);
