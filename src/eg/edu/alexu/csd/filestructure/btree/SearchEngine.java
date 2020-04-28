@@ -74,13 +74,22 @@ public class SearchEngine implements ISearchEngine {
 
 	@Override
 	public void indexDirectory(String directoryPath) {
+                if(directoryPath == null || directoryPath.isEmpty()) 
+                        throw new RuntimeErrorException(new Error());
 		File folder = new File(directoryPath);
-		File[] listOfFiles = folder.listFiles();
-		for (int i = 0; i < listOfFiles.length; i++) {
-			if (listOfFiles[i].isFile()) {
-				this.indexWebPage(listOfFiles[i].getPath());
-			}
-		}
+                if(!folder.exists()) 
+                        throw new RuntimeErrorException(new Error());
+                if(folder.isDirectory()){
+                        File[] listOfFiles = folder.listFiles();
+		        for (int i = 0; i < listOfFiles.length; i++) {
+			      if (listOfFiles[i].isDirectory()) 
+				  this.indexDirectory(listOfFiles[i].getPath());
+                              else 
+			          this.indexWebPage(listOfFiles[i].getPath());
+		        }
+                }else
+			throw new RuntimeErrorException(new Error());
+		
 	}
 
 	@Override
