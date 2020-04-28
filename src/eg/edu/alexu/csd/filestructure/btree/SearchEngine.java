@@ -1,111 +1,119 @@
 package eg.edu.alexu.csd.filestructure.btree;
 
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+import org.xml.sax.SAXException;
+
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import org.xml.sax.*;
-import org.w3c.dom.*;
-import javax.xml.parsers.*;
+import java.util.Set;
+import javax.management.RuntimeErrorException;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
 
 public class SearchEngine implements ISearchEngine {
-	private IBTree<String, ArrayList<SearchResult>> docTree;
-	private Map<String, SearchResult> dataOfDoc;
+	private IBTree<String, HashMap<String, Integer>> btree;
 
-	public SearchEngine() {
-		dataOfDoc = new HashMap<>();
-		docTree = new BTree<>(5);
+	public SearchEngine(int minDegree) {
+		btree = new BTree<String, HashMap<String,Integer>>(minDegree);
 	}
 
 	@Override
 	public void indexWebPage(String filePath) {
-		Document xmlDoc = getDocument(filePath);
-		NodeList docList = xmlDoc.getElementsByTagName("doc");
-		System.out.println(docList.item(0).getTextContent());
-		for (int i = 0; i < docList.getLength(); i++) {
-			dataOfDoc = getDocumentMap(docList, i);
-			for (Map.Entry<String, SearchResult> entry : dataOfDoc.entrySet()) {
-				ArrayList<SearchResult> SResult = docTree.search(entry.getKey());
-				if (SResult == null) {
-					ArrayList<SearchResult> results = new ArrayList<>();
-					results.add(entry.getValue());
-					docTree.insert(entry.getKey(), results);
+		if(filePath == null || filePath.isEmpty())
+			throw new RuntimeErrorException(new Error());
+		HashMap<String, HashMap<String, Integer>> map = parse(filePath);
+		for(String id: map.keySet()) {
+			HashMap<String, Integer> words = map.get(id);
+			for(String word: words.keySet()) {
+				HashMap<String, Integer> wordIndex = btree.search(word);
+				if(wordIndex == null) {
+					wordIndex = new HashMap<String, Integer>();
+					wordIndex.put(id, words.get(word));
+					btree.insert(word, wordIndex);
 				} else {
-					SResult.add(entry.getValue());
+					wordIndex.put(id, words.get(word));
 				}
 			}
 		}
-
 	}
-	private Document getDocument(String docString) {
-		try {
-			DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-			factory.setIgnoringComments(true);
-			factory.setIgnoringElementContentWhitespace(true);
-			factory.setValidating(false);
-			DocumentBuilder builder = factory.newDocumentBuilder();
 
-			return builder.parse(new InputSource(docString));
-		} catch (Exception ex) {
-			System.out.println(ex.getMessage());
-			return null;
+	private HashMap<String, HashMap<String, Integer>> parse(String path) {
+		HashMap<String, HashMap<String, Integer>> files = new HashMap<>();
+		File xmldoc = new File(path);
+		if (!xmldoc.exists()) {
+			throw new RuntimeErrorException(new Error());
 		}
+		DocumentBuilderFactory docFactory = DocumentBuilderFactory.newInstance();
+		DocumentBuilder docBuilder;
+		try {
+			docBuilder = docFactory.newDocumentBuilder();
+			Document doc = docBuilder.parse(xmldoc);
+			Element root = doc.getDocumentElement();
+			NodeList rootDocuments = root.getElementsByTagName("doc");
+			for (int i = 0; i < rootDocuments.getLength(); i++) {
+				Node n = rootDocuments.item(i);
+				String body = n.getTextContent();
+				HashMap<String, Integer> ranks = getRank(body);
+				Node attributeID = n.getAttributes().item(0);
+				files.put(attributeID.getNodeValue(), ranks);
+			}
+		} catch (ParserConfigurationException | SAXException | IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return files;
 	}
 
-	private Map<String, SearchResult> getDocumentMap(NodeList docList, int i) {
-		Map<String, SearchResult> docWords = new HashMap<>();
-		Node document = docList.item(i);
-		String doc_id = document.getAttributes().getNamedItem("id").getTextContent();
-		String[] docContent = document.getTextContent().split("\\s+");
-		for (int j = 0; j < docContent.length; j++) {
-			String word = docContent[j].toLowerCase();
-			if (docWords.containsKey(word)) {
-				docWords.get(word).setRank(docWords.get(word).getRank() + 1);
+	private HashMap<String, Integer> getRank(String body) {
+		HashMap<String, Integer> rank = new HashMap<>();
+		body = body.trim();
+		String[] words = body.split("\\s+");
+		for (int i = 0; i < words.length; i++) {
+			if (rank.get(words[i].toLowerCase()) == null) {
+				rank.put(words[i].toLowerCase(), 1);
 			} else {
-				SearchResult result = new SearchResult(doc_id,1);
-				result.setId(doc_id);
-				result.setRank(1);
-				docWords.put(word, result);
+				rank.put(words[i].toLowerCase(), rank.get(words[i].toLowerCase()) + 1);
 			}
 		}
-		return docWords;
+		return rank;
 	}
-
 	@Override
 	public void indexDirectory(String directoryPath) {
-                if(directoryPath == null || directoryPath.isEmpty()) 
-                        throw new RuntimeErrorException(new Error());
-		File folder = new File(directoryPath);
-                if(!folder.exists()) 
-                        throw new RuntimeErrorException(new Error());
-                if(folder.isDirectory()){
-                        File[] listOfFiles = folder.listFiles();
-		        for (int i = 0; i < listOfFiles.length; i++) {
-			      if (listOfFiles[i].isDirectory()) 
-				  this.indexDirectory(listOfFiles[i].getPath());
-                              else 
-			          this.indexWebPage(listOfFiles[i].getPath());
-		        }
-                }else
+		if(directoryPath == null || directoryPath.isEmpty())
 			throw new RuntimeErrorException(new Error());
-		
+		File folder = new File(directoryPath);
+		if(!folder.exists())
+			throw new RuntimeErrorException(new Error());
+		if(folder.isDirectory()){
+			File[] listOfFiles = folder.listFiles();
+			for (int i = 0; i < listOfFiles.length; i++) {
+				if (listOfFiles[i].isDirectory())
+					this.indexDirectory(listOfFiles[i].getPath());
+				else
+					this.indexWebPage(listOfFiles[i].getPath());
+			}
+		}else
+			throw new RuntimeErrorException(new Error());
+
 	}
 
 	@Override
 	public void deleteWebPage(String filePath) {
-		Document xmlDoc = getDocument(filePath);
-		NodeList docList = xmlDoc.getElementsByTagName("doc");
-		for (int i = 0; i < docList.getLength(); i++) {
-			dataOfDoc = getDocumentMap(docList, i);
-			for (Map.Entry<String, SearchResult> entry : dataOfDoc.entrySet()) {
-				ArrayList<SearchResult> SResult = docTree.search(entry.getKey());
-				if (SResult != null) {
-					for (int j = 0; j < SResult.size(); j++) {
-						if (SResult.get(j).getId().equals(entry.getValue().getId())) {
-							SResult.remove(j);
-						}
-					}
+		if(filePath == null || filePath.isEmpty()) throw new RuntimeErrorException(new Error());
+		HashMap<String, HashMap<String, Integer>> map = parse(filePath);
+		for(String id: map.keySet()) {
+			HashMap<String, Integer> words = map.get(id);
+			for(String word: words.keySet()) {
+				HashMap<String, Integer> wordIndices = btree.search(word);
+				if(wordIndices != null) {
+					wordIndices.remove(id);
 				}
 			}
 		}
@@ -113,14 +121,11 @@ public class SearchEngine implements ISearchEngine {
 
 	@Override
 	public List<ISearchResult> searchByWordWithRanking(String word) {
-		// TODO Auto-generated method stub
 		return null;
 	}
 
 	@Override
 	public List<ISearchResult> searchByMultipleWordWithRanking(String sentence) {
-		// TODO Auto-generated method stub
 		return null;
 	}
-
 }
