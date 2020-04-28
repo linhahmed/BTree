@@ -83,6 +83,7 @@ public class BTree<K extends Comparable<K>, V> implements IBTree<K, V> {
 		while (i < node.getNumOfKeys() && node.getKeys().get(i).compareTo(key) < 0) {
 			i++;
 		}
+
 		// remove duplicates if any
 		if (i < node.getNumOfKeys() && node.getKeys().get(i).compareTo(key) == 0) {
 			return;
@@ -164,14 +165,19 @@ public class BTree<K extends Comparable<K>, V> implements IBTree<K, V> {
 
 	private V BTreeSearch(K key, IBTreeNode<K, V> x) {
 		int i = 0;
-		while (i < x.getNumOfKeys() && key.compareTo(x.getKeys().get(i)) > 0)
+		while (i < x.getKeys().size() && key.compareTo(x.getKeys().get(i)) > 0)
 			i++;
-		if (i < x.getNumOfKeys() && key.compareTo(x.getKeys().get(i)) == 0)
+		if (i < x.getKeys().size()  && key.compareTo(x.getKeys().get(i)) == 0)
 			return x.getValues().get(i);
 		else if (x.isLeaf())
 			return null;
-		else
-			return BTreeSearch(key, x.getChildren().get(i));
+		else {
+			if (i==x.getChildren().size())
+			return BTreeSearch(key, x.getChildren().get(i-1));
+			else
+				return BTreeSearch(key, x.getChildren().get(i));
+
+		}
 	}
 
 	@Override
@@ -193,9 +199,9 @@ public class BTree<K extends Comparable<K>, V> implements IBTree<K, V> {
 
 	private void delete(K key, IBTreeNode<K, V> x) {
 		int i = 0;
-		while (i < x.getNumOfKeys() && key.compareTo(x.getKeys().get(i)) > 0)
+		while (i < x.getKeys().size() && key.compareTo(x.getKeys().get(i)) > 0)
 			i++;
-		if (i < x.getNumOfKeys() && x.getKeys().get(i).compareTo(key) == 0) {
+		if (i < x.getKeys().size()&& x.getKeys().get(i).compareTo(key) == 0) {
 			if (x.isLeaf())
 				deleteFromLeaf(x, i);
 			else
@@ -224,11 +230,34 @@ public class BTree<K extends Comparable<K>, V> implements IBTree<K, V> {
 		} else {
 			IBTreeNode<K, V> parent = getParent(k);
 			IBTreeNode<K, V> pp = getParent(parent.getKeys().get(0));
+			int  childOldKeys =x.getChildren().get(i).getNumOfKeys();
+			IBTreeNode<K, V> child =x.getChildren().get(i);
 
 			merge(x, i);
+			IBTreeNode<K, V> a = null;
+			IBTreeNode<K, V> b = null;
+			if (!child.isLeaf()){
+			a =child.getChildren().get(childOldKeys);
+			 b =child.getChildren().get(childOldKeys+1);}
+
+
 			x.getChildren().get(i).getKeys().remove(k);
 			x.getChildren().get(i).getValues().remove(v);
 			x.getChildren().get(i).setNumOfKeys(x.getChildren().get(i).getNumOfKeys() - 1);
+			if (!child.isLeaf()) {
+			a.getKeys().addAll(b.getKeys());
+			a.getValues().addAll(b.getValues());
+			a.setNumOfKeys(a.getKeys().size());
+			child.getChildren().remove(childOldKeys+1);
+
+	if (!a.isLeaf()) {
+		a.getChildren().addAll(a.getChildren());
+	}
+}
+
+
+
+
 
 			IBTreeNode<K, V> sibL = null;
 			IBTreeNode<K, V> sibR = null;
@@ -363,7 +392,7 @@ public class BTree<K extends Comparable<K>, V> implements IBTree<K, V> {
 
 		if (childInParent > 0)
 			sibL = parent.getChildren().get(childInParent - 1);
-		if (childInParent < parent.getNumOfKeys())
+		if (childInParent < parent.getKeys().size())
 			sibR = parent.getChildren().get(childInParent + 1);
 		if (sibL != null && sibL.getNumOfKeys() >= getMinimumDegree()) {
 			temp.getKeys().remove(i);
@@ -431,8 +460,8 @@ public class BTree<K extends Comparable<K>, V> implements IBTree<K, V> {
 		}
 	}
 
-	private void borrowFromLeft(IBTreeNode<K, V> parent, int childInParent, IBTreeNode<K, V> sibL, IBTreeNode toDel,
-			int i, K k, V v) {
+	private void borrowFromLeft(IBTreeNode<K, V> parent, int childInParent, IBTreeNode<K, V> sibL, IBTreeNode<K,V> toDel,
+								int i, K k, V v) {
 		K tempKey = k;
 		V tempValue = v;
 		toDel.getKeys().add(0, parent.getKeys().get(childInParent - 1));
@@ -444,11 +473,30 @@ public class BTree<K extends Comparable<K>, V> implements IBTree<K, V> {
 		sibL.getKeys().remove(sibL.getNumOfKeys() - 1);
 		sibL.getValues().remove(sibL.getNumOfKeys() - 1);
 		sibL.setNumOfKeys(sibL.getNumOfKeys() - 1);
+		if (!sibL.isLeaf()) {
+			int t=sibL.getChildren().size()-1;
+			toDel.getChildren().add(0, sibL.getChildren().get(t));
+			sibL.getChildren().remove(sibL.getChildren().size()-1);
+		}
+		/*
+		if (!sibL.isLeaf()) {
+			IBTreeNode<K,V> l=sibL.getChildren().get(sibL.getNumOfKeys());
+			IBTreeNode<K,V> r=sibL.getChildren().get(sibL.getNumOfKeys()+1);
+			l.getKeys().addAll(r.getKeys());
+			l.getValues().addAll(r.getValues());
+			l.setNumOfKeys(l.getKeys().size());
+			if (!r.isLeaf())
+				l.getChildren().addAll(r.getChildren());
+			sibL.getChildren().remove(sibL.getChildren().size()-1);
+		}
+		*/
+
+
 
 	}
 
 	private void borrowFromRight(IBTreeNode<K, V> parent, int childInParent, IBTreeNode<K, V> sibR, IBTreeNode toDel,
-			int i, K k, V v) {
+								 int i, K k, V v) {
 		K tempKey = k;
 		V tempValue = v;
 		toDel.getKeys().add(parent.getKeys().get(childInParent));
@@ -460,6 +508,24 @@ public class BTree<K extends Comparable<K>, V> implements IBTree<K, V> {
 		sibR.getKeys().remove(0);
 		sibR.getValues().remove(0);
 		sibR.setNumOfKeys(sibR.getNumOfKeys() - 1);
+		/*
+		if (!sibR.isLeaf()) {
+			IBTreeNode<K,V> l=sibR.getChildren().get(sibR.getNumOfKeys());
+			IBTreeNode<K,V> r=sibR.getChildren().get(sibR.getNumOfKeys()+1);
+			l.getKeys().addAll(r.getKeys());
+			l.getValues().addAll(r.getValues());
+			l.setNumOfKeys(l.getKeys().size());
+			if (!r.isLeaf())
+				l.getChildren().addAll(r.getChildren());
+			sibR.getChildren().remove(sibR.getChildren().size()-1);
+		}
+
+		 */
+		if (!sibR.isLeaf()) {
+			int t=sibR.getChildren().size()-1;
+			toDel.getChildren().add( sibR.getChildren().get(0));
+			sibR.getChildren().remove(0);
+		}
 
 	}
 
