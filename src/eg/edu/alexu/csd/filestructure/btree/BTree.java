@@ -177,12 +177,12 @@ public class BTree<K extends Comparable<K>, V> implements IBTree<K, V> {
 		V value = search(key);
 		if (value == null) return false;
 		delete(key, root);
-		int h=0;
-		for (int i=0;i<2;i++)
-			h++;
-
-
-
+		if (root.getNumOfKeys() == 0) {
+			if (root.isLeaf())
+				root = null;
+			else
+				root = root.getChildren().get(0);
+		}
 		return true;
 	}
 
@@ -220,23 +220,53 @@ public class BTree<K extends Comparable<K>, V> implements IBTree<K, V> {
 			x.getValues().set(i, succ.getValues().get(0));
 			delete(succ.getKeys().get(0), x.getChildren().get(i + 1));
 		} else {
+			IBTreeNode<K,V> parent=getParent(k);
+			IBTreeNode<K,V> pp=getParent(parent.getKeys().get(0));
 
-				merge(x, i);
-				x.getChildren().get(i).getKeys().remove(k);
-				x.getChildren().get(i).getValues().remove(v);
-				x.getChildren().get(i).setNumOfKeys(x.getChildren().get(i).getNumOfKeys()-1);
-				//
-				//IBTreeNode Parent=getParent(k);
+			merge(x, i);
+			x.getChildren().get(i).getKeys().remove(k);
+			x.getChildren().get(i).getValues().remove(v);
+			x.getChildren().get(i).setNumOfKeys(x.getChildren().get(i).getNumOfKeys()-1);
 
-				//x=Parent;
+			IBTreeNode<K,V> sibL = null;
+			IBTreeNode<K,V> sibR = null;
 
+			if (parent.getNumOfKeys() <getMinimumDegree()-1){
+				int childInParent = 0;
+				int j=0;
+				while (j < pp.getNumOfKeys() && k.compareTo(pp.getKeys().get(j++)) > 0)
+					childInParent++;
+				if (childInParent>0)
+					sibL=pp.getChildren().get(childInParent-1);
+				if (childInParent<parent.getNumOfKeys())
+					sibR=pp.getChildren().get(childInParent+1);
+				while (parent!=getRoot()&&parent.getNumOfKeys()<getMinimumDegree()-1) {
+					if (sibL != null && sibL.getNumOfKeys() >= getMinimumDegree())
+						borrowFromLeft(pp, childInParent, sibL, parent, i,k,v);
+					else if (sibR != null && sibR.getNumOfKeys() >= getMinimumDegree())
+						borrowFromLeft(pp, childInParent, sibR, parent, i,k,v);
+					else {
+						if (sibL!=null)
+							merge(pp, childInParent -1);
+						else
+							merge(pp,childInParent);
 
-			//while (Parent.getNumOfKeys() < getMinimumDegree() - 1)
-				//borrow
+					}
+					parent=pp;
+				}
+
+			}
+
 		}
 
-
 	}
+
+
+
+
+
+
+
 
 
 	private IBTreeNode<K,V> getParent(K k) {
@@ -248,8 +278,7 @@ public class BTree<K extends Comparable<K>, V> implements IBTree<K, V> {
 				i++;
 			if (i < r.getNumOfKeys() && k.compareTo(r.getKeys().get(i)) == 0)
 				break;
-			//else if (r.isLeaf())
-				//return null;
+
 			else {
 				y=r;
 				r = r.getChildren().get(i);
@@ -265,9 +294,9 @@ public class BTree<K extends Comparable<K>, V> implements IBTree<K, V> {
 		IBTreeNode<K, V> sibling=null;
 		//merge with left in case of leaf node deletion
 		if (i==x.getNumOfKeys())
-		sibling = x.getChildren().get(i - 1);
+			sibling = x.getChildren().get(i - 1);
 		else
-		 sibling = x.getChildren().get(i + 1);
+			sibling = x.getChildren().get(i + 1);
 		child.getKeys().add(x.getKeys().get(i));
 		child.getValues().add(x.getValues().get(i));
 		child.getKeys().addAll(sibling.getKeys());
@@ -321,80 +350,8 @@ public class BTree<K extends Comparable<K>, V> implements IBTree<K, V> {
 
 			}
 			else
-			fix(toDel, i);
-			/*
+				fix(toDel, i);
 
-			IBTreeNode<K,V> parent = getParent(k);
-
-			IBTreeNode<K,V> sibL = null;
-			IBTreeNode<K,V> sibR = null;
-
-			int childInParent = 0;
-			while (i < parent.getNumOfKeys() && k.compareTo(parent.getKeys().get(i++)) > 0)
-				childInParent++;
-
-			if (i>0)
-				sibL=parent.getChildren().get(i-1);
-			if (i<parent.getNumOfKeys())
-				sibR=parent.getChildren().get(i+1);
-			if (sibL!=null&&sibL.getNumOfKeys() >= getMinimumDegree()){
-				K tempKey = (K) parent.getKeys().get(childInParent-1);
-				V tempValue = (V) parent.getValues().get(childInParent-1);
-
-				parent.getKeys().set(childInParent-1,sibL.getKeys().get(sibL.getNumOfKeys()-1));
-				parent.getValues().set(childInParent-1,sibL.getValues().get(sibL.getNumOfKeys()-1));
-
-				sibL.getKeys().remove(sibL.getNumOfKeys()-1);
-				sibL.getValues().remove(sibL.getNumOfKeys()-1);
-				sibL.setNumOfKeys(sibL.getNumOfKeys()-1);
-
-
-				//for(int j = i;j>0;j--) {
-				//	toDel.getKeys().set(j, toDel.getKeys().get(j - 1));
-				//	toDel.getValues().set(j, toDel.getValues().get(j - 1));
-				//}
-
-
-				toDel.getKeys().remove(i);
-				toDel.getValues().remove(i);
-				toDel.getKeys().add(0,tempKey);
-				toDel.getValues().add(0,tempValue);
-			}
-			else if (sibR!=null&&sibR.getNumOfKeys()>=getMinimumDegree()){
-				K tempKey = (K) parent.getKeys().get(childInParent);
-				V tempValue = (V) parent.getValues().get(childInParent);
-
-				parent.getKeys().set(childInParent,sibR.getKeys().get(0));
-				parent.getValues().set(childInParent,sibR.getValues().get(0));
-
-				sibR.getKeys().remove(0);
-				sibR.getValues().remove(0);
-				sibR.setNumOfKeys(sibR.getNumOfKeys()-1);
-
-				toDel.getKeys().remove(i);
-				toDel.getValues().remove(i);
-				toDel.getKeys().add(tempKey);
-				toDel.getValues().add(tempValue);
-			}
-			else {
-				if (sibL!=null) {
-					merge(parent, i - 1);
-					sibL.getKeys().remove(k);
-					sibL.getKeys().remove(v);
-					sibL.setNumOfKeys(sibL.getNumOfKeys()-1);
-				}
-				else {
-					merge(parent,i);
-					sibR.getKeys().remove(k);
-					sibR.getKeys().remove(v);
-					sibR.setNumOfKeys(sibR.getNumOfKeys()-1);
-				}
-
-
-			}
-
-
-*/
 
 		}
 
@@ -407,6 +364,7 @@ public class BTree<K extends Comparable<K>, V> implements IBTree<K, V> {
 
 		IBTreeNode<K,V> sibL = null;
 		IBTreeNode<K,V> sibR = null;
+		IBTreeNode<K,V> temp = toDel;
 
 		int childInParent = 0;
 		int j=0;
@@ -418,69 +376,116 @@ public class BTree<K extends Comparable<K>, V> implements IBTree<K, V> {
 		if (childInParent<parent.getNumOfKeys())
 			sibR=parent.getChildren().get(childInParent+1);
 		if (sibL!=null&&sibL.getNumOfKeys() >= getMinimumDegree()){
-			K tempKey = (K) parent.getKeys().get(childInParent-1);
-			V tempValue = (V) parent.getValues().get(childInParent-1);
+			temp.getKeys().remove(i);
+			temp.getValues().remove(i);
+			borrowFromLeft(parent,childInParent,sibL,toDel,i,k,v);
 
-			parent.getKeys().set(childInParent-1,sibL.getKeys().get(sibL.getNumOfKeys()-1));
-			parent.getValues().set(childInParent-1,sibL.getValues().get(sibL.getNumOfKeys()-1));
 
-			sibL.getKeys().remove(sibL.getNumOfKeys()-1);
-			sibL.getValues().remove(sibL.getNumOfKeys()-1);
-			sibL.setNumOfKeys(sibL.getNumOfKeys()-1);
-/*
-				for(int j = i;j>0;j--) {
-					toDel.getKeys().set(j, toDel.getKeys().get(j - 1));
-					toDel.getValues().set(j, toDel.getValues().get(j - 1));
-				}
-
- */
-			toDel.getKeys().remove(i);
-			toDel.getValues().remove(i);
-			toDel.getKeys().add(0,tempKey);
-			toDel.getValues().add(0,tempValue);
 		}
 		else if (sibR!=null&&sibR.getNumOfKeys()>=getMinimumDegree()){
-			K tempKey = (K) parent.getKeys().get(childInParent);
-			V tempValue = (V) parent.getValues().get(childInParent);
+			temp.getKeys().remove(i);
+			temp.getValues().remove(i);
+			borrowFromRight(parent,childInParent,sibR,toDel,i,k,v);
 
-			parent.getKeys().set(childInParent,sibR.getKeys().get(0));
-			parent.getValues().set(childInParent,sibR.getValues().get(0));
 
-			sibR.getKeys().remove(0);
-			sibR.getValues().remove(0);
-			sibR.setNumOfKeys(sibR.getNumOfKeys()-1);
 
-			toDel.getKeys().remove(i);
-			toDel.getValues().remove(i);
-			toDel.getKeys().add(tempKey);
-			toDel.getValues().add(tempValue);
+
+
 		}
 		else {
+			IBTreeNode p=null;
+			IBTreeNode<K,V> pp = getParent((K) parent.getKeys().get(0));
 			if (sibL!=null) {
-				merge(parent, childInParent );
+				merge(parent, childInParent -1);
 				sibL.getKeys().remove(k);
 				sibL.getKeys().remove(v);
 				sibL.setNumOfKeys(sibL.getNumOfKeys()-1);
+
 			}
 			else {
-				merge(parent,childInParent+1);
+				merge(parent,childInParent);
 				toDel.getKeys().remove(k);
 				toDel.getKeys().remove(v);
-				toDel.setNumOfKeys(sibR.getNumOfKeys()-1);
+				toDel.setNumOfKeys(toDel.getNumOfKeys()-1);
+
 			}
-			/*
-			if (sibL!=null){
-				sibL.getKeys().remove(k);
-				sibL.getKeys().remove(v);
+			if (parent.getNumOfKeys()<getMinimumDegree()-1) {
+				p=parent;
+				K kk = k;
+				V vv= v;
+
+
+
+				IBTreeNode<K,V> sibLL = null;
+				IBTreeNode<K,V> sibRR = null;
+
+				int childInParentt = 0;
+				int h=0;
+				while (h < pp.getNumOfKeys() && kk.compareTo(pp.getKeys().get(h++)) > 0)
+					childInParentt++;
+
+				if (childInParentt>0)
+					sibLL=pp.getChildren().get(childInParentt-1);
+				if (childInParentt<pp.getNumOfKeys())
+					sibRR=pp.getChildren().get(childInParentt+1);
+				while (p!=getRoot()&&p.getNumOfKeys()<getMinimumDegree()-1){
+					if (sibLL!=null&&sibLL.getNumOfKeys() >= getMinimumDegree())
+						borrowFromLeft(pp,childInParentt,sibLL,p,i,k,v);
+					else if (sibRR!=null&&sibRR.getNumOfKeys() >= getMinimumDegree())
+						borrowFromRight(pp,childInParentt,sibRR,p,i,k,v);
+					else {
+						if (sibLL!=null) {
+							merge(pp, childInParentt -1);
+
+
+						}
+						else {
+							merge(pp,childInParentt);
+
+
+						}
+
+
+					}
+					p=pp;
+				}
+
 			}
-			else {
-				sibR.getKeys().remove(k);
-				sibR.getKeys().remove(v);
-			}
-			 */
 
 
 		}
+	}
+
+	private void borrowFromLeft(IBTreeNode<K,V> parent, int childInParent, IBTreeNode<K,V> sibL, IBTreeNode toDel,int i,K k,V v) {
+		K tempKey = k;
+		V tempValue = v;
+		toDel.getKeys().add(0,parent.getKeys().get(childInParent-1));
+		toDel.getValues().add(0,parent.getValues().get(childInParent-1));
+
+		parent.getKeys().set(childInParent-1,sibL.getKeys().get(sibL.getNumOfKeys()-1));
+		parent.getValues().set(childInParent-1,sibL.getValues().get(sibL.getNumOfKeys()-1));
+
+		sibL.getKeys().remove(sibL.getNumOfKeys()-1);
+		sibL.getValues().remove(sibL.getNumOfKeys()-1);
+		sibL.setNumOfKeys(sibL.getNumOfKeys()-1);
+
+
+	}
+
+	private void borrowFromRight(IBTreeNode<K,V> parent, int childInParent, IBTreeNode<K,V> sibR, IBTreeNode toDel,int i,K k, V v) {
+		K tempKey = k;
+		V tempValue = v;
+		toDel.getKeys().add(parent.getKeys().get(childInParent));
+		toDel.getValues().add(parent.getValues().get(childInParent));
+
+		parent.getKeys().set(childInParent,sibR.getKeys().get(0));
+		parent.getValues().set(childInParent,sibR.getValues().get(0));
+
+		sibR.getKeys().remove(0);
+		sibR.getValues().remove(0);
+		sibR.setNumOfKeys(sibR.getNumOfKeys()-1);
+
+
 	}
 
 
