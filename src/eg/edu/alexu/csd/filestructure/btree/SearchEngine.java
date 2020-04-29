@@ -11,7 +11,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Set;
 import javax.management.RuntimeErrorException;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -24,26 +23,11 @@ public class SearchEngine implements ISearchEngine {
 		btree = new BTree<>(minDegree);
 		this.minDegree = minDegree;
 	}
-	ArrayList<String> str = new ArrayList<>();
 	@Override
 	public void indexWebPage(String filePath) {
 		if(filePath == null || filePath.isEmpty())
 			throw new RuntimeErrorException(new Error());
-		btree = parse(filePath,btree);//l kilma w osadha l map fiha l string hwa l id wl rank hwa l int
-//		print(btree.getRoot());
-//		for(String id: str) {
-//			HashMap<String, Integer> words = btree.search(id);
-//			for(String word: words.keySet()) {
-//				HashMap<String, Integer> wordIndex = btree.search(word);
-//				if(wordIndex == null) {
-//					wordIndex = new HashMap<>();
-//					wordIndex.put(id, words.get(word));
-//					btree.insert(word, wordIndex);
-//				} else {
-//					wordIndex.put(id, words.get(word));
-//				}
-//			}
-//		}
+		btree = parse(filePath,btree);
 	}
 
 	public void print(IBTreeNode root) {
@@ -84,11 +68,7 @@ public class SearchEngine implements ISearchEngine {
 				Node n = rootDocuments.item(i);
 				String body = n.getTextContent();
 				Node attributeID = n.getAttributes().item(0);
-//				files.insert(attributeID.getNodeValue(),new HashMap<>(),String id);
 				tempTree = getRank(body,attributeID.getNodeValue(),tempTree);
-//				HashMap<String, Integer> ranks = getRank(body);
-//				Node attributeID = n.getAttributes().item(0);
-//				files.insert(attributeID.getNodeValue(), ranks);
 			}
 		} catch (ParserConfigurationException | SAXException | IOException e) {
 			// TODO Auto-generated catch block
@@ -96,6 +76,8 @@ public class SearchEngine implements ISearchEngine {
 		}
 		return tempTree;
 	}
+
+	int SUM = 0;
 
 	private IBTree<String, List<ISearchResult>> getRank(String body,String ID,IBTree<String, List<ISearchResult>>tempTree) {
 		HashMap<String, Integer> rank = new HashMap<>();
@@ -142,18 +124,27 @@ public class SearchEngine implements ISearchEngine {
 
 	@Override
 	public void deleteWebPage(String filePath) {
+		System.out.println("SUM BEFORE DELETE IS "+SUM);
 		if(filePath == null || filePath.isEmpty()) throw new RuntimeErrorException(new Error());
 		IBTree<String, List<ISearchResult>> delBTree = new BTree<>(minDegree);
 		delBTree = parse(filePath,delBTree);
-//		for(String id: map.keySet()) {
-//			HashMap<String, Integer> words = map.get(id);
-//			for(String word: words.keySet()) {
-//				HashMap<String, Integer> wordIndices = btree.search(word);
-//				if(wordIndices != null) {
-//					wordIndices.remove(id);
-//				}
-//			}
-//		}
+		IBTreeNode root = delBTree.getRoot();
+		traverse(root);
+	}
+
+	public void traverse(IBTreeNode node) {
+		int i;
+		for (i = 0; i < node.getNumOfKeys(); i++) {
+			if (node.isLeaf()== false)
+				traverse((IBTreeNode) node.getChildren().get(i));
+			if(btree.search((String) node.getKeys().get(i))!=null) {
+				System.out.println(node.getKeys().get(i)+" "+node.getKeys().size());
+				System.out.println("IN BTREE "+btree.search((String) node.getKeys().get(i)).size());
+				btree.search(((String) node.getKeys().get(i)).toLowerCase()).removeAll(node.getValues());
+			}
+		}
+		if (node.isLeaf() == false)
+			traverse((IBTreeNode) node.getChildren().get(i));
 	}
 
 	@Override
