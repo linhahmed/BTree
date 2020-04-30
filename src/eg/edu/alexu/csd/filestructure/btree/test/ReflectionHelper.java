@@ -1,4 +1,4 @@
-package eg.edu.alexu.csd.filestructure.btree.test;
+package eg.edu.alexu.csd.filestructure.btree;
 
 import java.io.File;
 import java.io.IOException;

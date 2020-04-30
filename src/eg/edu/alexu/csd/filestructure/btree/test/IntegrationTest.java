@@ -5,9 +5,6 @@ import java.util.List;
 import org.junit.Assert;
 import org.junit.Test;
 
-import eg.edu.alexu.csd.filestructure.btree.IBTree;
-import eg.edu.alexu.csd.filestructure.btree.ISearchEngine;
-
 public class IntegrationTest {
 
 	
