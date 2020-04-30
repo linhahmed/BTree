@@ -1,4 +1,4 @@
-package eg.edu.alexu.csd.filestructure.btree.test;
+package eg.edu.alexu.csd.filestructure.btree;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;
@@ -25,17 +25,11 @@ import org.hamcrest.core.IsInstanceOf;
 import org.junit.Assert;
 import org.junit.Test;
 
-import eg.edu.alexu.csd.filestructure.btree.IBTree;
-import eg.edu.alexu.csd.filestructure.btree.IBTreeNode;
-import eg.edu.alexu.csd.filestructure.btree.ISearchEngine;
-import eg.edu.alexu.csd.filestructure.btree.ISearchResult;
-import eg.edu.alexu.csd.filestructure.btree.SearchResult;
-
 
 public class UnitTest {
 	private final boolean debug = false;
 
-	/** 
+	/**
 	 * test get a null root.
 	 */
 	@Test
@@ -49,7 +43,7 @@ public class UnitTest {
 			root = btree.getRoot();
 			if (debug)
 				System.out.println("TestRootNull: (case null)");
-			if (root != null) 
+			if (root != null)
 				Assert.fail();
 		} catch (RuntimeErrorException ex) {
 			if (debug)
@@ -186,7 +180,7 @@ public class UnitTest {
 	public void testGetMinimumDegree() {
 
 		try {
-			for (int i = 2; i < 10; i++) {				
+			for (int i = 2; i < 10; i++) {
 				IBTree<String, String> btree = (IBTree<String, String>) TestRunner.getImplementationInstanceForInterface(IBTree.class, new Object[]{i});
 				Assert.assertEquals(i, btree.getMinimumDegree());
 			}
@@ -443,7 +437,7 @@ public class UnitTest {
 
 			for (int i = 0; i < rndNum.size(); i++) {
 				int searchKey = rndNum.get(i);
-				Assert.assertEquals("Lolo" + searchKey, btree.search(searchKey));				
+				Assert.assertEquals("Lolo" + searchKey, btree.search(searchKey));
 			}
 		} catch (Throwable e) {
 			TestRunner.fail("Fail to search in tree", e);
@@ -466,7 +460,7 @@ public class UnitTest {
 
 			for (int i = 0; i < inp.size(); i++) {
 				int searchKey = inp.get(i);
-				Assert.assertEquals("Soso" + searchKey, btree.search(searchKey));				
+				Assert.assertEquals("Soso" + searchKey, btree.search(searchKey));
 			}
 
 		} catch (Throwable e) {
@@ -588,7 +582,7 @@ public class UnitTest {
 
 			for (int i = 0; i < rndNum.size(); i++) {
 				Assert.assertTrue(btree.delete(rndNum.get(i)));
-				Assert.assertTrue(verifyBTree(root, 0, getHeight(root), 5, root));				
+				Assert.assertTrue(verifyBTree(root, 0, getHeight(root), 5, root));
 			}
 
 
@@ -658,7 +652,7 @@ public class UnitTest {
 		} catch (Throwable e) {
 			TestRunner.fail("Fail to delete in tree", e);
 		}
-	}	
+	}
 
 	/**
 	 * Test deletion complex case 3.
@@ -670,6 +664,7 @@ public class UnitTest {
 		IBTree<Integer, String> btree = (IBTree<Integer, String>) TestRunner.getImplementationInstanceForInterface(IBTree.class, new Object[]{3});
 
 		try {
+//			100000
 			Random r = new Random();
 			TreeSet<Integer> set = new TreeSet<>();
 			HashSet<Integer> deleteSet = new HashSet<>();
@@ -764,17 +759,17 @@ public class UnitTest {
 		 */
 		try {
 			searchEngine.indexWebPage("res\\wiki_00");
-			List<ISearchResult> expected = Arrays.asList(new SearchResult[]{new SearchResult("7697605", 1), new SearchResult("7697611", 8)});
-			List<ISearchResult> actual = searchEngine.searchByWordWithRanking("THISISTESTWord");
+			List<ISearchResult> expected = Arrays.asList(new SearchResult[]{new SearchResult("7697605", 1), new SearchResult("7697611", 10)});
+			List<ISearchResult> actual = searchEngine.searchByWordWithRanking("ThE");
 			for (ISearchResult searchRes : actual) {
 				System.out.println(searchRes.toString());
 			}
-			Collections.sort(actual, new Comparator<ISearchResult>() {
-				@Override
-				public int compare(ISearchResult o1, ISearchResult o2) {
-					return o1.getRank() - o2.getRank();
-				}
-			});
+//			Collections.sort(actual, new Comparator<ISearchResult>() {
+//				@Override
+//				public int compare(ISearchResult o1, ISearchResult o2) {
+//					return o1.getRank() - o2.getRank();
+//				}
+//			});
 
 			for (int i = 0; i < expected.size(); i++) {
 				Assert.assertEquals(expected.get(i).getId(), actual.get(i).getId());
@@ -831,17 +826,17 @@ public class UnitTest {
 		 */
 		try {
 			searchEngine.indexDirectory("res");
-			List<ISearchResult> expected = Arrays.asList(new SearchResult[]{new SearchResult("7697605", 1), new SearchResult("7702780", 3), new SearchResult("7697611", 8)});
-			List<ISearchResult> actual = searchEngine.searchByWordWithRanking("THISISTESTWord");
+			List<ISearchResult> expected = Arrays.asList(new SearchResult[]{new SearchResult("7697605", 1), new SearchResult("7697611", 10)});
+			List<ISearchResult> actual = searchEngine.searchByWordWithRanking("ThE");
 			for (ISearchResult searchRes : actual) {
 				System.out.println(searchRes.toString());
 			}
-			Collections.sort(actual, new Comparator<ISearchResult>() {
-				@Override
-				public int compare(ISearchResult o1, ISearchResult o2) {
-					return o1.getRank() - o2.getRank();
-				}
-			});
+//			Collections.sort(actual, new Comparator<ISearchResult>() {
+//				@Override
+//				public int compare(ISearchResult o1, ISearchResult o2) {
+//					return o1.getRank() - o2.getRank();
+//				}
+//			});
 
 			for (int i = 0; i < expected.size(); i++) {
 				Assert.assertEquals(expected.get(i).getId(), actual.get(i).getId());
@@ -861,7 +856,7 @@ public class UnitTest {
 		ISearchEngine searchEngine = (ISearchEngine) TestRunner.getImplementationInstanceForInterface(ISearchEngine.class, new Object[]{100});
 		/**
 		 * This test should be modified according to the testing directory and the search query.
-		 * You should make sure that the test can support multiple file in the same directory 
+		 * You should make sure that the test can support multiple file in the same directory
 		 * or nested directory up to multiple level.
 		 * You should test your implementation against cases including:
 		 * 1- word that does not exist in tree.
@@ -871,17 +866,17 @@ public class UnitTest {
 		 */
 		try {
 			searchEngine.indexDirectory("res");
-			List<ISearchResult> expected = Arrays.asList(new SearchResult[]{new SearchResult("7712144", 1), new SearchResult("7708196", 2)});
-			List<ISearchResult> actual = searchEngine.searchByWordWithRanking("THISIStESTWORDFORSUBFOLDER");
+			List<ISearchResult> expected = Arrays.asList(new SearchResult[]{new SearchResult("7697605", 1), new SearchResult("7697611", 10)});
+			List<ISearchResult> actual = searchEngine.searchByWordWithRanking("ThE");
 			for (ISearchResult searchRes : actual) {
 				System.out.println(searchRes.toString());
 			}
-			Collections.sort(actual, new Comparator<ISearchResult>() {
-				@Override
-				public int compare(ISearchResult o1, ISearchResult o2) {
-					return o1.getRank() - o2.getRank();
-				}
-			});
+//			Collections.sort(actual, new Comparator<ISearchResult>() {
+//				@Override
+//				public int compare(ISearchResult o1, ISearchResult o2) {
+//					return o1.getRank() - o2.getRank();
+//				}
+//			});
 
 			for (int i = 0; i < expected.size(); i++) {
 				Assert.assertEquals(expected.get(i).getId(), actual.get(i).getId());
@@ -938,17 +933,17 @@ public class UnitTest {
 		try {
 			searchEngine.indexDirectory("res");
 			searchEngine.deleteWebPage("res\\wiki_00");
-			List<ISearchResult> expected = Arrays.asList(new SearchResult[]{new SearchResult("7702780", 1)});
-			List<ISearchResult> actual = searchEngine.searchByWordWithRanking("DELETEWORD");
-			for (ISearchResult searchRes : actual) {
-				System.out.println(searchRes.toString());
-			}
-			Collections.sort(actual, new Comparator<ISearchResult>() {
-				@Override
-				public int compare(ISearchResult o1, ISearchResult o2) {
-					return o1.getRank() - o2.getRank();
-				}
-			});
+			List<ISearchResult> expected = Arrays.asList(new SearchResult[]{new SearchResult("7702780", 34), new SearchResult("7702785", 2)});
+			List<ISearchResult> actual = searchEngine.searchByWordWithRanking("ThE");
+//			for (ISearchResult searchRes : actual) {
+//				System.out.println(searchRes.toString());
+//			}
+//			Collections.sort(actual, new Comparator<ISearchResult>() {
+//				@Override
+//				public int compare(ISearchResult o1, ISearchResult o2) {
+//					return o1.getRank() - o2.getRank();
+//				}
+//			});
 			for (int i = 0; i < expected.size(); i++) {
 				Assert.assertEquals(expected.get(i).getId(), actual.get(i).getId());
 				Assert.assertEquals(expected.get(i).getRank(), actual.get(i).getRank());
@@ -976,19 +971,19 @@ public class UnitTest {
 		 */
 		try {
 			searchEngine.indexWebPage("res\\wiki_00");
-			searchEngine.indexWebPage("res\\subfolder\\wiki_02");
+			searchEngine.indexWebPage("res\\wiki_02");
 			searchEngine.deleteWebPage("res\\wiki_01");
-			List<ISearchResult> expected = Arrays.asList(new SearchResult[]{new SearchResult("7697611", 1)});
-			List<ISearchResult> actual = searchEngine.searchByWordWithRanking("testDeleteWebPageUnIndexedWebPage");
+			List<ISearchResult> expected = Arrays.asList(new SearchResult[]{new SearchResult("7697605", 1), new SearchResult("7697611", 10)});
+			List<ISearchResult> actual = searchEngine.searchByWordWithRanking("ThE");
 			for (ISearchResult searchRes : actual) {
 				System.out.println(searchRes.toString());
 			}
-			Collections.sort(actual, new Comparator<ISearchResult>() {
-				@Override
-				public int compare(ISearchResult o1, ISearchResult o2) {
-					return o1.getRank() - o2.getRank();
-				}
-			});
+//			Collections.sort(actual, new Comparator<ISearchResult>() {
+//				@Override
+//				public int compare(ISearchResult o1, ISearchResult o2) {
+//					return o1.getRank() - o2.getRank();
+//				}
+//			});
 			for (int i = 0; i < expected.size(); i++) {
 				Assert.assertEquals(expected.get(i).getId(), actual.get(i).getId());
 				Assert.assertEquals(expected.get(i).getRank(), actual.get(i).getRank());
@@ -1008,10 +1003,10 @@ public class UnitTest {
 
 		try {
 			searchEngine.indexWebPage("res\\wiki_00");
-			searchEngine.indexWebPage("res\\wiki_01");
-			searchEngine.indexWebPage("res\\subfolder\\wiki_02");
-			searchEngine.deleteWebPage("res\\wiki_01");
-			searchEngine.deleteWebPage("res\\subfolder\\wiki_02");
+//			searchEngine.indexWebPage("res\\wiki_01");
+//			searchEngine.indexWebPage("res\\wiki_02");
+//			searchEngine.deleteWebPage("res\\wiki_01");
+//			searchEngine.deleteWebPage("res\\wiki_02");
 			searchEngine.deleteWebPage("res\\wiki_00");
 
 			List<ISearchResult> actual = searchEngine.searchByWordWithRanking("ThE");
@@ -1041,7 +1036,7 @@ public class UnitTest {
 			TestRunner.fail("Fail to search web page", e);
 		}
 	}
-	
+
 	/**
 	 * Test searchByMultipleWordWithRanking with null or empty parameter.
 	 */
@@ -1073,7 +1068,7 @@ public class UnitTest {
 		ISearchEngine searchEngine = (ISearchEngine) TestRunner.getImplementationInstanceForInterface(ISearchEngine.class, new Object[]{100});
 		/**
 		 * This test should be modified according to the testing directory and the search query.
-		 * You should make sure that the test can support multiple file in the same directory 
+		 * You should make sure that the test can support multiple file in the same directory
 		 * or nested directory up to multiple level.
 		 * You should test your implementation against cases including:
 		 * 1- multiple words with different cases that exists in the tree. e.g ThE sKy is bLuE, .... (Check that the rank is the min)
@@ -1082,19 +1077,20 @@ public class UnitTest {
 		 */
 		try {
 			searchEngine.indexDirectory("res");
-			List<ISearchResult> expected = Arrays.asList(new SearchResult[]{new SearchResult("7702780", 1), new SearchResult("7697611", 3)});
-			List<ISearchResult> actual = searchEngine.searchByMultipleWordWithRanking(" word1d word2d     word3d 	");
-			for (ISearchResult searchRes : actual) {
-				System.out.println(searchRes.toString());
-			}
-			Collections.sort(actual, new Comparator<ISearchResult>() {
-				@Override
-				public int compare(ISearchResult o1, ISearchResult o2) {
-					return o1.getRank() - o2.getRank();
-				}
-			});
+			List<ISearchResult> expected = Arrays.asList(new SearchResult[]{new SearchResult("7697605", 1), new SearchResult("7697611", 10)});
+			List<ISearchResult> actual = searchEngine.searchByMultipleWordWithRanking("   tHe  is  aRE   		");
+//			for (ISearchResult searchRes : actual) {
+//				System.out.println(searchRes.toString());
+//			}
+//			Collections.sort(actual, new Comparator<ISearchResult>() {
+//				@Override
+//				public int compare(ISearchResult o1, ISearchResult o2) {
+//					return o1.getRank() - o2.getRank();
+//				}
+//			});
 
 			for (int i = 0; i < expected.size(); i++) {
+				System.out.println(i);
 				Assert.assertEquals(expected.get(i).getId(), actual.get(i).getId());
 				Assert.assertEquals(expected.get(i).getRank(), actual.get(i).getRank());
 			}
@@ -1102,7 +1098,7 @@ public class UnitTest {
 			TestRunner.fail("Fail to index directory", e);
 		}
 	}
-	
+
 	private int getHeight (IBTreeNode<?, ?> node) {
 		if (node.isLeaf()) return 0;
 
@@ -1110,7 +1106,7 @@ public class UnitTest {
 	}
 
 	private boolean verifyBTree (IBTreeNode<?, ?> node, int lvl, int height, int t, IBTreeNode<?, ?> root) {
-		if (!node.equals(root)) 
+		if (!node.equals(root))
 			if (node.getNumOfKeys() < t - 1 || node.getNumOfKeys() > 2 * t - 1)
 				return false;
 		boolean ans = true;
@@ -1124,19 +1120,19 @@ public class UnitTest {
 			ans = ans && (lvl == height);
 		}
 		return ans;
-	} 
+	}
 
 	private void traverseTreeInorder(IBTreeNode<Integer, String> node, List<Integer> keys, List<String> vals) {
-		int i; 
-		for (i = 0; i < node.getNumOfKeys(); i++) 
-		{ 
+		int i;
+		for (i = 0; i < node.getNumOfKeys(); i++)
+		{
 
-			if (!node.isLeaf()) 
+			if (!node.isLeaf())
 				traverseTreeInorder(node.getChildren().get(i), keys, vals);
 			keys.add(node.getKeys().get(i));
 			vals.add(node.getValues().get(i));
-		} 
-		if (!node.isLeaf()) 
+		}
+		if (!node.isLeaf())
 			traverseTreeInorder(node.getChildren().get(i), keys, vals);
 	}
 
